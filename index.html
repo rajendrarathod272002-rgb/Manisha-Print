@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Manisha Print Service</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>Manisha Print Service</h1>
+        <p>Upload your file and place your print order</p>
+    </div>
+
+
+    <div class="card">
+
+        <h2>1. Upload File</h2>
+
+        <input
+            type="file"
+            id="fileInput"
+            accept=".pdf,.jpg,.jpeg,.png"
+        >
+
+        <p id="fileName"></p>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>2. Print Settings</h2>
+
+        <label>Total Pages</label>
+
+        <input
+            type="number"
+            id="pages"
+            min="1"
+            value="1"
+        >
+
+
+        <label>Copies</label>
+
+        <input
+            type="number"
+            id="copies"
+            min="1"
+            value="1"
+        >
+
+
+        <label>Print Side</label>
+
+        <select id="side">
+
+            <option value="single">
+                Single Side
+            </option>
+
+            <option value="both">
+                Both Side
+            </option>
+
+        </select>
+
+
+        <label>Pages Per Sheet</label>
+
+        <select id="pagesPerSheet">
+
+            <option value="1">1 Page / Sheet</option>
+            <option value="2">2 Pages / Sheet</option>
+            <option value="4">4 Pages / Sheet</option>
+            <option value="6">6 Pages / Sheet</option>
+            <option value="9">9 Pages / Sheet</option>
+            <option value="16">16 Pages / Sheet</option>
+
+        </select>
+
+
+        <label>Paper Size</label>
+
+        <select id="paper">
+
+            <option value="A4">A4</option>
+            <option value="A3">A3</option>
+
+        </select>
+
+
+        <label>Colour</label>
+
+        <select id="colour">
+
+            <option value="bw">
+                Black & White
+            </option>
+
+            <option value="colour">
+                Colour
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="card priceBox">
+
+        <h2>Total Amount</h2>
+
+        <div class="price">
+            ₹<span id="total">2.00</span>
+        </div>
+
+        <p id="calculation">
+            1 page × 1 copy
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>3. Customer Details</h2>
+
+        <input
+            type="text"
+            id="customerName"
+            placeholder="Your Name"
+        >
+
+        <input
+            type="tel"
+            id="customerMobile"
+            placeholder="Mobile Number"
+            maxlength="10"
+        >
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>4. Payment Mode</h2>
+
+        <div class="payment">
+
+            <label>
+                <input
+                    type="radio"
+                    name="payment"
+                    value="online"
+                    checked
+                >
+                Online Payment
+            </label>
+
+
+            <label>
+                <input
+                    type="radio"
+                    name="payment"
+                    value="cash"
+                >
+                Cash Payment
+            </label>
+
+        </div>
+
+    </div>
+
+
+    <button
+        id="submitBtn"
+        class="submitBtn"
+    >
+        Submit Print Order
+    </button>
+
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
