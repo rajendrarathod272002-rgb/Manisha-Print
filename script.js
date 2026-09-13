@@ -1,13 +1,23 @@
 // ============================================
-// SUPABASE CONFIGURATION
+// PDF.JS
+// ============================================
+
+import * as pdfjsLib from
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+
+// ============================================
+// SUPABASE
 // ============================================
 
 const SUPABASE_URL =
-    "https://mtjrovximdwpjnkldeof.supabase.co/rest/v1/";
+    "YOUR_SUPABASE_URL";
 
 const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10anJvdnhpbWR3cGpua2xkZW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMDY3ODYsImV4cCI6MjEwNDg4Mjc4Nn0.t8oVWaKmKZHwZWYxuDHmNbbrzL7ZodbvuHlteTnd6qk";
-
+    "YOUR_SUPABASE_ANON_KEY";
 
 const supabaseClient =
     supabase.createClient(
@@ -55,31 +65,38 @@ const message =
 
 
 // ============================================
-// DEFAULT PRICE
+// PRICE SETTINGS
 // ============================================
 
 let settings = {
+
     bw_single: 2,
+
     bw_both: 3,
+
     colour_single: 10,
+
     colour_both: 15,
+
     a3_extra: 2
+
 };
 
 
 // ============================================
-// LOAD PRICE SETTINGS
+// LOAD SETTINGS
 // ============================================
 
 async function loadSettings() {
 
     const { data, error } =
         await supabaseClient
-            .from("print_settings")
-            .select("*")
-            .eq("active", true)
-            .limit(1)
-            .single();
+        .from("print_settings")
+        .select("*")
+        .eq("active", true)
+        .limit(1)
+        .single();
+
 
     if (!error && data) {
 
@@ -87,12 +104,154 @@ async function loadSettings() {
 
     }
 
+
     calculatePrice();
+
 }
 
 
 // ============================================
-// CALCULATE PRICE
+// AUTO PDF PAGE COUNT
+// ============================================
+
+async function getPDFPageCount(file) {
+
+    const arrayBuffer =
+        await file.arrayBuffer();
+
+    const pdf =
+        await pdfjsLib.getDocument({
+            data: arrayBuffer
+        }).promise;
+
+    return pdf.numPages;
+
+}
+
+
+// ============================================
+// FILE UPLOAD EVENT
+// ============================================
+
+fileInput.addEventListener(
+    "change",
+    async () => {
+
+        const file =
+            fileInput.files[0];
+
+        if (!file) return;
+
+
+        document.getElementById(
+            "fileName"
+        ).textContent =
+            "Selected: " + file.name;
+
+
+        // ------------------------------------
+        // PDF
+        // ------------------------------------
+
+        if (
+            file.type === "application/pdf" ||
+            file.name.toLowerCase().endsWith(".pdf")
+        ) {
+
+            try {
+
+                pagesInput.disabled = true;
+
+                pagesInput.value = "";
+
+                pagesInput.placeholder =
+                    "Calculating pages...";
+
+
+                const pageCount =
+                    await getPDFPageCount(file);
+
+
+                pagesInput.value =
+                    pageCount;
+
+
+                pagesInput.placeholder =
+                    "";
+
+
+                pagesInput.disabled = false;
+
+
+                calculatePrice();
+
+
+                showMessage(
+                    `PDF detected: ${pageCount} pages`,
+                    "success"
+                );
+
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                pagesInput.disabled = false;
+
+                pagesInput.value = 1;
+
+                showMessage(
+                    "PDF page count could not be read.",
+                    "error"
+                );
+
+            }
+
+        }
+
+        // ------------------------------------
+        // IMAGE
+        // ------------------------------------
+
+        else if (
+            file.type.startsWith("image/")
+        ) {
+
+            pagesInput.value = 1;
+
+            pagesInput.disabled = true;
+
+            calculatePrice();
+
+
+            showMessage(
+                "Image detected: 1 page",
+                "success"
+            );
+
+        }
+
+        // ------------------------------------
+        // OTHER FILE
+        // ------------------------------------
+
+        else {
+
+            pagesInput.disabled = false;
+
+            pagesInput.value = 1;
+
+            calculatePrice();
+
+        }
+
+    }
+);
+
+
+// ============================================
+// PRICE CALCULATION
 // ============================================
 
 function calculatePrice() {
@@ -103,60 +262,75 @@ function calculatePrice() {
             parseInt(pagesInput.value) || 1
         );
 
+
     const copies =
         Math.max(
             1,
             parseInt(copiesInput.value) || 1
         );
 
+
     const side =
         sideInput.value;
+
 
     const colour =
         colourInput.value;
 
+
     const paper =
         paperInput.value;
 
+
+    const pagesPerSheet =
+        Number(
+            pagesPerSheetInput.value
+        );
+
+
     let rate;
 
+
+    // ------------------------------------
+    // RATE
+    // ------------------------------------
 
     if (colour === "colour") {
 
         rate =
             side === "both"
-                ? Number(settings.colour_both)
-                : Number(settings.colour_single);
+            ? Number(settings.colour_both)
+            : Number(settings.colour_single);
 
-    } else {
+    }
+
+    else {
 
         rate =
             side === "both"
-                ? Number(settings.bw_both)
-                : Number(settings.bw_single);
+            ? Number(settings.bw_both)
+            : Number(settings.bw_single);
+
     }
 
+
+    // A3 EXTRA
 
     if (paper === "A3") {
 
-        rate += Number(settings.a3_extra);
+        rate +=
+            Number(settings.a3_extra);
 
     }
 
 
-    /*
-       Pages per sheet changes the number
-       of physical sheets.
-
-       Example:
-       8 pages / 2 pages per sheet
-       = 4 sheets
-    */
+    // ------------------------------------
+    // SHEETS
+    // ------------------------------------
 
     const sheets =
         Math.ceil(
-            pages /
-            Number(pagesPerSheetInput.value)
+            pages / pagesPerSheet
         );
 
 
@@ -172,11 +346,12 @@ function calculatePrice() {
 
     calculationElement.textContent =
         `${pages} pages × ${copies} copy = ${sheets} sheets`;
+
 }
 
 
 // ============================================
-// EVENTS
+// SETTINGS CHANGE
 // ============================================
 
 [
@@ -186,41 +361,24 @@ function calculatePrice() {
     pagesPerSheetInput,
     paperInput,
     colourInput
-].forEach(element => {
 
-    element.addEventListener(
-        "change",
-        calculatePrice
-    );
+].forEach(element => {
 
     element.addEventListener(
         "input",
         calculatePrice
     );
 
+    element.addEventListener(
+        "change",
+        calculatePrice
+    );
+
 });
 
 
-fileInput.addEventListener(
-    "change",
-    () => {
-
-        if (fileInput.files.length > 0) {
-
-            document.getElementById(
-                "fileName"
-            ).textContent =
-                "Selected: " +
-                fileInput.files[0].name;
-
-        }
-
-    }
-);
-
-
 // ============================================
-// SHOW MESSAGE
+// MESSAGE
 // ============================================
 
 function showMessage(
@@ -228,7 +386,8 @@ function showMessage(
     type
 ) {
 
-    message.textContent = text;
+    message.textContent =
+        text;
 
     message.className =
         "message " + type;
@@ -237,16 +396,16 @@ function showMessage(
 
 
 // ============================================
-// UPLOAD FILE
+// UPLOAD FILE TO SUPABASE
 // ============================================
 
 async function uploadFile(file) {
 
     const extension =
         file.name
-            .split(".")
-            .pop()
-            .toLowerCase();
+        .split(".")
+        .pop()
+        .toLowerCase();
 
 
     const uniqueName =
@@ -262,12 +421,12 @@ async function uploadFile(file) {
 
     const { error } =
         await supabaseClient
-            .storage
-            .from("print-files")
-            .upload(
-                filePath,
-                file
-            );
+        .storage
+        .from("print-files")
+        .upload(
+            filePath,
+            file
+        );
 
 
     if (error) {
@@ -278,11 +437,12 @@ async function uploadFile(file) {
 
 
     return filePath;
+
 }
 
 
 // ============================================
-// CREATE ORDER
+// SUBMIT ORDER
 // ============================================
 
 submitBtn.addEventListener(
@@ -291,7 +451,9 @@ submitBtn.addEventListener(
 
         try {
 
-            submitBtn.disabled = true;
+            submitBtn.disabled =
+                true;
+
 
             showMessage(
                 "Please wait...",
@@ -299,9 +461,11 @@ submitBtn.addEventListener(
             );
 
 
-            // FILE CHECK
+            // FILE
 
-            if (!fileInput.files.length) {
+            if (
+                !fileInput.files.length
+            ) {
 
                 throw new Error(
                     "Please select a file."
@@ -337,9 +501,11 @@ submitBtn.addEventListener(
             }
 
 
-            if (!/^[0-9]{10}$/.test(
-                customerMobile
-            )) {
+            if (
+                !/^[0-9]{10}$/.test(
+                    customerMobile
+                )
+            ) {
 
                 throw new Error(
                     "Please enter valid mobile number."
@@ -348,18 +514,18 @@ submitBtn.addEventListener(
             }
 
 
-            // PRINT DATA
+            // PRINT SETTINGS
 
             const pages =
                 parseInt(
                     pagesInput.value
-                );
+                ) || 1;
 
 
             const copies =
                 parseInt(
                     copiesInput.value
-                );
+                ) || 1;
 
 
             const side =
@@ -386,30 +552,36 @@ submitBtn.addEventListener(
                 ).value;
 
 
-            // PRICE
+            // RATE
 
             let rate;
 
 
-            if (colour === "colour") {
+            if (
+                colour === "colour"
+            ) {
 
                 rate =
                     side === "both"
-                        ? Number(settings.colour_both)
-                        : Number(settings.colour_single);
+                    ? Number(settings.colour_both)
+                    : Number(settings.colour_single);
 
-            } else {
+            }
+
+            else {
 
                 rate =
                     side === "both"
-                        ? Number(settings.bw_both)
-                        : Number(settings.bw_single);
+                    ? Number(settings.bw_both)
+                    : Number(settings.bw_single);
+
             }
 
 
             if (paper === "A3") {
 
-                rate += Number(settings.a3_extra);
+                rate +=
+                    Number(settings.a3_extra);
 
             }
 
@@ -439,78 +611,66 @@ submitBtn.addEventListener(
                 await uploadFile(file);
 
 
-            // ORDER STATUS
-
-            const paymentStatus =
-                paymentMode === "cash"
-                    ? "pending"
-                    : "pending";
-
-
-            const orderStatus =
-                paymentMode === "cash"
-                    ? "payment_pending"
-                    : "payment_pending";
-
-
             // SAVE ORDER
 
             const { data, error } =
                 await supabaseClient
-                    .from("print_orders")
-                    .insert({
+                .from("print_orders")
+                .insert({
 
-                        customer_name:
-                            customerName,
+                    customer_name:
+                        customerName,
 
-                        customer_mobile:
-                            customerMobile,
+                    customer_mobile:
+                        customerMobile,
 
-                        file_name:
-                            file.name,
+                    file_name:
+                        file.name,
 
-                        file_url:
-                            filePath,
+                    file_url:
+                        filePath,
 
-                        file_type:
-                            file.type,
+                    file_type:
+                        file.type,
 
-                        total_pages:
-                            pages,
+                    total_pages:
+                        pages,
 
-                        copies:
-                            copies,
+                    copies:
+                        copies,
 
-                        print_side:
-                            side,
+                    print_side:
+                        side,
 
-                        pages_per_sheet:
-                            pagesPerSheet,
+                    pages_per_sheet:
+                        pagesPerSheet,
 
-                        paper_size:
-                            paper,
+                    paper_size:
+                        paper,
 
-                        colour_mode:
-                            colour,
+                    colour_mode:
+                        colour,
 
-                        price_per_page:
-                            rate,
+                    price_per_page:
+                        rate,
 
-                        total_amount:
-                            totalAmount,
+                    total_amount:
+                        totalAmount,
 
-                        payment_mode:
-                            paymentMode,
+                    payment_mode:
+                        paymentMode,
 
-                        payment_status:
-                            paymentStatus,
+                    payment_status:
+                        "pending",
 
-                        order_status:
-                            orderStatus
+                    order_status:
+                        paymentMode === "cash"
+                        ? "payment_pending"
+                        : "payment_pending"
 
-                    })
-                    .select()
-                    .single();
+                })
+                .select()
+                .single();
 
 
             if (error) {
@@ -520,21 +680,21 @@ submitBtn.addEventListener(
             }
 
 
-            // SUCCESS
-
             showMessage(
-                `Order submitted successfully! Order No: ${data.order_no}`,
+                `Order submitted! Order No: ${data.order_no}`,
                 "success"
             );
 
 
-            submitBtn.disabled = false;
+            submitBtn.disabled =
+                false;
 
         }
 
         catch (error) {
 
             console.error(error);
+
 
             showMessage(
                 error.message ||
@@ -543,7 +703,8 @@ submitBtn.addEventListener(
             );
 
 
-            submitBtn.disabled = false;
+            submitBtn.disabled =
+                false;
 
         }
 
