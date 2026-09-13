@@ -3,10 +3,10 @@
 // ============================================
 
 const SUPABASE_URL =
-    "YOUR_SUPABASE_URL";
+    "https://mtjrovximdwpjnkldeof.supabase.co/rest/v1/";
 
 const SUPABASE_ANON_KEY =
-    "YOUR_SUPABASE_ANON_KEY";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10anJvdnhpbWR3cGpua2xkZW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMDY3ODYsImV4cCI6MjEwNDg4Mjc4Nn0.t8oVWaKmKZHwZWYxuDHmNbbrzL7ZodbvuHlteTnd6qk";
 
 
 const supabaseClient =
